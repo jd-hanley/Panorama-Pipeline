@@ -1,9 +1,6 @@
 import cv2
 import numpy as np
 
-def harris_corner_detector():
-    pass
-
 '''
 Detect corners in the image
 Input: Image
@@ -26,11 +23,11 @@ def detect_corners(img, threshold_factor = 0.01):
     # ksize: Kernel size of the sobel operator used
     # k: Harris Detector free parameter
 
-    blockSize = 5
-    ksize = 3
+    block_size = 5
+    k_size = 3
     k = 0.05
 
-    cmap = harris_corner_detector(gray, blockSize, ksize, k)
+    cmap = cv2.cornerHarris(gray, block_size, k_size, k)
 
     # Apply the threshold, obtain the coordinates of the strong corners, and match the corner scores with the coordinates
     threshold = threshold_factor * cmap.max()
@@ -44,7 +41,7 @@ def detect_corners(img, threshold_factor = 0.01):
     return cmap, corners, corner_scores
 
 
-def plot_corners():
+def plot_corners(image_list):
     pass
 
 def anms():
