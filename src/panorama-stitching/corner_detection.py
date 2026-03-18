@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from plot_images import show_image
+from scipy.ndimage import maximum_filter
 
 '''
 Detect corners in an image
@@ -12,7 +13,7 @@ Output:
     corners (list of (row, col) tuples): locations of strong (exceeded threshold) corners in the image
     corner_scores (list of floats): corners scores corresponding to the locations in corners
 '''
-def detect_corners(image, threshold_factor = 0.01):
+def detect_corners(image, threshold_factor = 0.005):
     # Check if the input image needs to be converted to grayscale
     # Also perform corner detection on a copy of the image 
     if len(image.shape) == 3:
@@ -70,6 +71,53 @@ def plot_corners(images):
         show_image(copy)
         
 
+"""
+Perform Adaptive Non-Maximal Supression
+Input:
+    cmap (np.ndarray): cornerness score matrix
+    n: desired number of strong corners
+Output:
+    best_corners (list of (row, col) tuples): locations of the n best corners
+    """
+def anms(cmap, n):
+    """ 
+    Overview of the algorithm:
+        1) Locate all regional maxima in cmap
+        2) Allocate a distance array with length corresponding to the number of maxima
+        3) Iterate over all pairs of points, determining the distance to the nearest maxima greater than the current point
+        4) Sort the distance array and corresponding maxima array in descending order
+        5) Return the first n entries
+    Why? This gives us the n corners that are local maxima and far away from better corners
+    We get corners that are both strong and spaced out """
 
-def anms():
-    pass
+    # Obtain the local maxima
+    # Window size is chosen arbitrarily... come back to this later to determine something better
+    local_maxima = (cmap == maximum_filter(cmap, size = 4))
+
+    # Extract the (row, col) coordinates where we have local maxima
+    row, col = np.where(local_maxima)
+    coordinates = np.column_stack((row, col))
+
+    # At this point, we have the coordinates of strong corner candidates, but we need to spread them out
+    n_candidates = len(coordinates)
+    # Initialize all distances to inf
+    distances = np.full(n_candidates, np.inf)
+    for i in range(n_candidates):
+        for j in range(n_candidates):
+            if cmap[coordinates[j][0], coordinates[j][1]] > cmap[coordinates[i][0], coordinates[i][1]]:
+                # We have a corner that is stronger than the one under consideration
+                distance = (coordinates[i][0] - coordinates[j][0])**2 + (coordinates[i][1] - coordinates[j][1])**2
+                if distance < distances[i]:
+                    distances[i] = distance
+    
+    # Note that our list of distances is implicitly linked to our list of coordinates (same ordering)
+    # I can use argsort to obtain the indices that would sort distances
+    indices = np.argsort(distances)[::-1]
+
+    # Now, sort according to those indices
+    sorted_distances = distances[indices]
+    sorted_coordinates = coordinates[indices]
+
+    if len(sorted_coordinates < n):
+        return sorted_coordinates
+    return sorted_coordinates[:n]
