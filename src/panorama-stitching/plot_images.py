@@ -1,5 +1,6 @@
 import cv2
 import matplotlib.pyplot as plt
+import math
 
 """
 Display an image using matplotlib
@@ -22,7 +23,35 @@ Display all images in a list using matplotlib
 Input:
     images (list of image dictionaries)
 Output:
-    None"""
+    None
+"""
 def plot_images(images):
-    for image in images:
-        show_image(image["color"])
+    # Determine the number of images to be plotted
+    n = len(images)
+
+    # Personal preference: use a convention of four columns
+    cols = 3
+
+    rows = math.ceil(n / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
+    axes = axes.flatten()
+
+    fig.suptitle("Input Dataset", fontsize=16)
+
+    for ax, image in zip(axes, images):
+        img = image["color"]
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        ax.imshow(img_rgb)
+        ax.set_title(image["name"], fontsize=10)
+        ax.axis("off")
+
+    for ax in axes[len(images):]:
+        ax.axis("off")
+    
+    plt.tight_layout()
+    plt.show()
+
+
+

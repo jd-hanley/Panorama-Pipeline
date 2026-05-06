@@ -7,11 +7,11 @@ Input:
     folder (string): path to folder containing image dataset
 Output: 
     images (list of dictionaries): dictionaries containing images and relevant information"""
-def load_images(folder):
+def load_images(path: str):
 
     # Valid file extensions: jpg, jpeg, png
     exts = {".jpg", ".jpeg", ".png"}
-    paths = sorted([p for p in Path(folder).iterdir() if p.suffix.lower() in exts])
+    paths = sorted([p for p in Path(path).iterdir() if p.suffix.lower() in exts])
 
     images = []
     for i, path in enumerate(paths):
@@ -28,6 +28,11 @@ def load_images(folder):
             "color": color,
             "gray": gray,
             "shape": color.shape[:2],
+            "cmap": None,
+            "t_cmap": None,
+            "corners": None,
+            "corner_scores": None,
+            "sorted_corners": None
         })
 
     return images
