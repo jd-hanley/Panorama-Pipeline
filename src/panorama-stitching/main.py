@@ -1,21 +1,39 @@
-from load_images import load_images
-from plot_images import plot_images
-from corner_detection import detect_corners
-from corner_detection import plot_corners
-from corner_detection import plot_cornerness
-from corner_detection import anms
-from pyramid import build_pyramid
-from pyramid import plot_pyramid
-from corner_detection import initialize_keypoints
-from feature_description import estimate_keypoint_orientations
-from feature_description import compute_mops_descriptors
-
+from pathlib import Path
 import sys
 
+from load_images import load_images
+from plot_images import plot_images
+
+from pyramid import (
+    build_pyramid,
+    plot_pyramid,
+)
+
+from corner_detection import (
+    detect_corners,
+    plot_corners,
+    plot_cornerness,
+    anms,
+    initialize_keypoints,
+)
+
+from feature_description import (
+    estimate_keypoint_orientations,
+    compute_mops_descriptors,
+)
+
+from feature_matching import (
+    match_all_image_pairs,
+    flatten_keypoints,
+    plot_all_matches
+)
+
 def main():
-    dataset = sys.argv[1]
-    dataset = "../../datasets/" + dataset
-    images = load_images(dataset)
+    dataset_name = sys.argv[1]
+
+    dataset_path = Path("../../datasets") / dataset_name
+
+    images = load_images(dataset_path)
     plot_images(images)
     build_pyramid(images)
     plot_pyramid(images)
@@ -27,6 +45,9 @@ def main():
     initialize_keypoints(images)
     estimate_keypoint_orientations(images)
     compute_mops_descriptors(images)
+    flatten_keypoints(images)
+    pair_matches = match_all_image_pairs(images)
+    plot_all_matches(images, pair_matches)
     # plot_corners(images, True)
     # anms(images, 500)
     # plot_corners(images, False)

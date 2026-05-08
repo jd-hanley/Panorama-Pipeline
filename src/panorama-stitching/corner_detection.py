@@ -5,48 +5,34 @@ from scipy.ndimage import maximum_filter
 import math
 import matplotlib.pyplot as plt
 
+from config import HARRIS_BLOCK_SIZE, HARRIS_FREE_PARAMETER, HARRIS_K_SIZE, HARRIS_THRESHOLD_FACTOR, NUM_LEVELS
+
 '''
 Detect corners in an image
 Input: 
     images: (list of image dictionaries)
-    threshold_factor: constant used to determine what constitutes a strong corner, relative to the max corner score
 Output:
     cmap (np.ndarray): cornerness score matrix
     corners (list of (row, col) tuples): locations of strong (exceeded threshold) corners in the image
     corner_scores (list of floats): corners scores corresponding to the locations in corners
     *** Output all added to each image's dictionary at each level
 '''
-def detect_corners(images, threshold_factor = 0.005):
-
-    # Set parameters for the call to the Harris Corner Detector
-    # Requires the following arguments
-        # img: the grayscale image
-        # blockSize: Size of the neighborhood for corner detection
-        # ksize: Kernel size of the sobel operator used
-        # k: Harris Detector free parameter
-
-    block_size = 5
-    k_size = 3
-    k = 0.05
+def detect_corners(images):
 
     # Iterate over all images in the list, detect corners at every level, update dictionary
     for image in images:
 
-        image["threshold_factor"] = threshold_factor
-
-        num_levels = 5
-
-        for level in range(num_levels):
+        for level in range(NUM_LEVELS):
 
             # Convert to float for corner detection
-            gray = np.float64(image[f"level_{level}"])
+            gray = np.float64(image["gray"][level])
 
             # Obtain the "cornerness" score matrix
             # cmap = cv2.cornerHarris(gray, block_size, k_size, k)
-            cmap = harris_corner(gray, block_size, k_size, k)
+            cmap = harris_corner(gray, HARRIS_BLOCK_SIZE, HARRIS_K_SIZE, HARRIS_FREE_PARAMETER)
 
             # Apply the threshold and determine the coordinates of strong corners
-            thresholded = threshold_factor * cmap.max()
+            thresholded = HARRIS_THRESHOLD_FACTOR * cmap.max()
             t_cmap = cmap > thresholded
             corner_coords = np.where(t_cmap)
 
@@ -54,9 +40,9 @@ def detect_corners(images, threshold_factor = 0.005):
             corners = list(zip(corner_coords[0], corner_coords[1]))
             corner_scores = [cmap[row, col] for row, col in corners]
 
-            image[f"level_{level}_cmap"] = cmap
-            image[f"level_{level}_corners"] = corners
-            image[f"level_{level}_corner_scores"] = corner_scores
+            image["cmaps"].append(cmap)
+            image["corners"].append(corners)
+            image["corner_scores"].append(corner_scores)
     
     return images
 
@@ -84,7 +70,7 @@ def harris_corner(gray, block_size, k_size, k):
     ix = cv2.Sobel(smoothed, cv2.CV_64F, 1, 0, k_size)
     iy = cv2.Sobel(smoothed, cv2.CV_64F, 0, 1, k_size)
 
-    # Compute the components of the M matrix for every single window
+    # Compute the components of the M matrix for every single entry
     ixx = ix * ix
     iyy = iy * iy
     ixy = ix * iy
@@ -113,9 +99,9 @@ Output:
     None
 """
 def plot_cornerness(images):
-    n = 5
+
     cols = 3
-    rows = math.ceil(n / cols)
+    rows = math.ceil(NUM_LEVELS / cols)
 
     for image in images:
         fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
@@ -123,9 +109,9 @@ def plot_cornerness(images):
 
         fig.suptitle(f"Corner Response Matrix across Gaussian Pyramid for {image['name']}")
 
-        for i in range(n):
+        for i in range(NUM_LEVELS):
             ax = axes[i]
-            cornerness_map = image[f"level_{i}_cmap"]
+            cornerness_map = image["cmaps"][i]
 
             cornerness_map[cornerness_map < 0] = 0
 
@@ -135,7 +121,7 @@ def plot_cornerness(images):
             ax.set_title(f"Level {i}", fontsize=10)
             ax.axis("off")
 
-        for ax in axes[n:]:
+        for ax in axes[NUM_LEVELS:]:
             ax.axis("off")
 
         plt.tight_layout()
@@ -172,11 +158,11 @@ def plot_corners(images, raw: bool):
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         if raw:
-            for row, col in image[f"level_{0}_corners"]:
+            for row, col in image["corners"][0]:
                 img_rgb[row, col] = [255,0,0]
         
         else:
-            for row, col in image[f"level_{0}_best_corners"]:
+            for row, col in image["best_corners"][0]:
                 img_rgb[row, col] = [255,0,0]
 
         ax.imshow(img_rgb)
@@ -216,16 +202,14 @@ def anms(images, n):
     for image in images:
         print(f"Processing {image['name']}......")
 
-        num_levels = 5
-
-        for level in range(num_levels):
+        for level in range(NUM_LEVELS):
             print(f"Processing level {level}......")
-            cmap = image[f"level_{level}_cmap"]
+            cmap = image["cmaps"][level]
 
             # Obtain the local maxima 
             # maximum_filter replaces each element with the maximum value in a specified window
             # local_maxima will set all pixels that are local maxima to one and all other pixels to zero
-            local_maxima = (cmap == maximum_filter(cmap, size = 5)) & (cmap > image["threshold_factor"] * cmap.max())
+            local_maxima = (cmap == maximum_filter(cmap, size = 5)) & (cmap > HARRIS_THRESHOLD_FACTOR * cmap.max())
 
             # Extract the (row, col) coordinates where we have local maxima
             row, col = np.where(local_maxima)
@@ -252,10 +236,10 @@ def anms(images, n):
             sorted_coordinates = coordinates[indices]
 
             if len(sorted_coordinates) < n:
-                image[f"level_{level}_best_corners"] = sorted_coordinates
+                image["best_corners"].append(sorted_coordinates)
                 print(f"Best corners detected for level {level}: {len(sorted_coordinates)}")
             else:
-                image[f"level_{level}_best_corners"] = sorted_coordinates[:n]
+                image["best_corners"].append(sorted_coordinates[:n])
                 print(f"Best corners detected for level {level}: {n}")
 
 
@@ -268,19 +252,25 @@ Output:
 """
 def initialize_keypoints(images):
 
-    num_levels = 5
-
     for image in images:
         image["keypoints"] = {}
 
-        for level in range(num_levels):
-            corners = image[f"level_{level}_best_corners"]
+        for level in range(NUM_LEVELS):
+            corners = image["best_corners"][level]
 
             image["keypoints"][level] = []
             for row, col in corners:
+
+                # For keypoints at lower levels, compute their coordinate in the original image
+                scale = 2 ** level
+                orig_row = row * scale
+                orig_col = col * scale
+
                 image["keypoints"][level].append({
                     "row": row,
                     "col": col,
+                    "orig_row": orig_row,
+                    "orig_col": orig_col,
                     "theta": None,
                     "level": level,
                     "descriptor": None

@@ -1,58 +1,150 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+
+from config import RATIO_THRESHOLD
 
 """
-Perform feature matching between the feature descriptors for two images
+Flatten all keypoints into a single list for every image
 Input:
-    desc_1 (dict of (row, col) tuple : (np.ndarray)): correspondence of coordinate to 64 x 1 feature descriptor for first image
-    desc_2 (dict of (row, col) tuple : (np.ndarray)): correspondence of coordinate to 64 x 1 feature descriptor for second image
+    images: list of image dictionaries
 Output:
-    matches: feature correspondences between images """
-def match_features(desc_1, desc_2):
+    None
+"""
+def flatten_keypoints(images):
+    for image in images:
+        image["all_keypoints"] = [
+            kp 
+            for level in image["keypoints"].values()
+            for kp in level
+        ]
+
+"""
+Perform feature matching between the feature descriptors of two images
+Input:
+    image_a: image dictionary
+    image_b: image dictionary
+Output:
+    matches: list of dictionaries
+"""
+def match_image_pair(image_a, image_b):
     """
     Overview of the algorithm:
-        1) Compute the sum of square differences from one descriptor to every descriptor in the second image
-        2) Compute the ratio from the best match to the second best match
-        3) If the ratio is below a threshold, add the match the result """
-    
-    # Define the ratio threshold
-    threshold = 0.6
-
+        - Compute the sum of square differences between each descriptor to every descriptor in the second image
+        - Compute the ratio of the best match to the second best match
+        - If the ratio is below the threshold, add the match and all relevant information to the result
+    """
+    # Start by flattening the keypoints to a single data structure
     matches = []
 
-    for (row_1, col_1), vec_1 in desc_1.items():
+    for kp_a in image_a["all_keypoints"]:
 
-        # Maintain a record of the SSD
-        ssd = []
+        if kp_a["theta"] is None or kp_a["descriptor"] is None:
+            continue
 
-        # Iterate over every descriptor in the second image
-        for (row_2, col_2), vec_2 in desc_2.items():
+        distances = []
 
-            diff = vec_1 - vec_2
-            score = np.sum(diff**2)
+        for kp_b in image_b["all_keypoints"]:
 
-            # Store both the coordinate and the ssd score
-            ssd.append({
-                "coordinate": (row_2, col_2),
-                "score": score
-            })
+            if kp_b["theta"] is None or kp_b["descriptor"] is None:
+                continue
+
+            # Compute the difference between the two descriptors and the sum of squared differences
+            diff = kp_a["descriptor"] - kp_b["descriptor"]
+            ssd = np.sum(diff * diff)
+            distances.append((ssd, kp_b))
         
-        # Sort the list by the ssd score
-        ssd.sort(key=lambda x: x['ssd'])
+        if len(distances) < 2:
+            continue
 
-        if len(ssd) > 2:
+        distances.sort(key=lambda x: x[0])
 
-            # Best match has the lowest ssd 
-            best_match = ssd[0]
-            runner_up = ssd[1]
+        best_distance, best_kp = distances[0]
+        second_distance, second_kp = distances[1]
 
-            # If the ratio between the best and second best is below threshold, then this is a good match
-            ratio = best_match["score"] / runner_up["score"]
-
-            if ratio < threshold:
-                matches.append([(row_1, col_1), best_match("coordinate")])
-
-
+        if best_distance / second_distance < RATIO_THRESHOLD:
+            matches.append({
+                "kp_a": kp_a,
+                "kp_b": best_kp,
+                "distance": best_distance,
+                "ratio": best_distance / second_distance,
+                "pt_a": (kp_a["orig_col"], kp_a["orig_row"]),
+                "pt_b": (best_kp["orig_col"], best_kp["orig_row"])
+            })
+    
     return matches
 
-def show_feature_matches():
-    pass
+"""
+Peform feature matching between all pairs of images
+Input:
+    images: list of image dictionaries
+Output:
+    pair_matches: dictionary of matches between image pairs
+"""
+def match_all_image_pairs(images):
+
+    print("Beginning feature descriptor matching between images......")
+    pair_matches = {}
+
+    for i in range(len(images)):
+        for j in range(i + 1, len(images)):
+            matches = match_image_pair(images[i], images[j])
+
+            # Store the result
+            pair_matches[(i, j)] = matches
+
+            print(f"Image {i} <-> Image {j}: {len(matches)} matches")
+    
+    return pair_matches
+
+"""
+Plot the matches between two images
+Input:
+    image_a: image dictionary
+    image_b: image dictionary
+    matches: list of dictionaries of match information
+Output: 
+    None
+"""
+def plot_matches(image_a, image_b, matches):
+
+    h_a, w_a = image_a["color"].shape[:2]
+    h_b, w_b = image_b["color"].shape[:2]
+
+    canvas_h = max(h_a, h_b)
+    canvas_w = w_a + w_b
+
+    canvas = np.zeros((canvas_h, canvas_w,3), dtype=image_a["color"].dtype)
+
+    image_a_corrected = cv2.cvtColor(image_a["color"], cv2.COLOR_BGR2RGB)
+    image_b_corrected = cv2.cvtColor(image_b["color"], cv2.COLOR_BGR2RGB)
+    canvas[:h_a, :w_a] = image_a_corrected
+    canvas[:h_b, w_a:w_a + w_b] = image_b_corrected
+
+    plt.figure(figsize=(14,7))
+    plt.imshow(canvas)
+    plt.axis("off")
+
+    for match in matches:
+        x_a, y_a = match["pt_a"]
+        x_b, y_b = match["pt_b"]
+
+        x_b_shifted = x_b + w_a
+
+        plt.plot([x_a, x_b_shifted], [y_a,y_b], linewidth=0.8)
+        plt.scatter([x_a, x_b_shifted], [y_a, y_b], s=8)
+    
+    plt.show()
+
+"""
+Plot matches for all image pairs
+Input:
+    images: list of image dictionaries
+    pair_matches: dictionary of image pairs to list of matches
+Output:
+    None
+"""
+def plot_all_matches(images, pair_matches):
+    for i in range(len(images)):
+        for j in range(i + 1, len(images)):
+            plot_matches(images[i], images[j], pair_matches[(i, j)])

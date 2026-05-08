@@ -2,6 +2,8 @@ import cv2
 import math
 import matplotlib.pyplot as plt
 
+from config import NUM_LEVELS, BLUR_KERNEL
+
 """
 Build the Gaussian Pyramid for robust, scale/rotation invariant feature description later
 Input:
@@ -14,28 +16,21 @@ def build_pyramid(images):
 
     # Iterate over all images in the list
     for image in images:
-        
-        current = image["level_0"].copy()
 
-        # Build level 1 (downsample original by factor of 2)
-        blurred = cv2.GaussianBlur(current, (5,5), sigmaX=1)
-        downsampled = blurred[::2, ::2]
-        image["level_1"] = downsampled.copy()
+        # Trying to clean this up a little bit
+        # Iterate over the number of levels in the pyramid
+        for level in range(1, NUM_LEVELS):
+            # Make a copy of the last image 
+            curr = image["gray"][-1].copy()
 
-        # Build level 2
-        blurred = cv2.GaussianBlur(downsampled, (5,5), sigmaX=1)
-        downsampled = blurred[::2, ::2]
-        image["level_2"] = downsampled.copy()
+            # Apply Gaussian blurring
+            blurred = cv2.GaussianBlur(curr, (BLUR_KERNEL, BLUR_KERNEL), sigmaX = 1)
 
-        # Build level 3
-        blurred = cv2.GaussianBlur(downsampled, (5,5), sigmaX=1)
-        downsampled = blurred[::2, ::2]
-        image["level_3"] = downsampled.copy()
+            # Downsample
+            downsampled = blurred[::2, ::2]
 
-        # Build level 4
-        blurred = cv2.GaussianBlur(downsampled, (5,5), sigmaX=1)
-        downsampled = blurred[::2, ::2]
-        image["level_4"] = downsampled.copy()
+            # Add to the array
+            image["gray"].append(downsampled)
 
 
 """
@@ -46,9 +41,9 @@ Output:
     None
 """
 def plot_pyramid(images):
-    n = 5
+
     cols = 3
-    rows = math.ceil(n / cols)
+    rows = math.ceil(NUM_LEVELS / cols)
 
     for image in images:
         fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
@@ -56,15 +51,15 @@ def plot_pyramid(images):
 
         fig.suptitle(f"Gaussian Pyramid for {image['name']}")
 
-        for i in range(n):
+        for i in range(NUM_LEVELS):
             ax = axes[i]
-            img = image[f"level_{i}"]
+            img = image["gray"][i]
 
             ax.imshow(img, cmap="gray")
             ax.set_title(f"Level {i}", fontsize=10)
             ax.axis("off")
 
-        for ax in axes[n:]:
+        for ax in axes[NUM_LEVELS:]:
             ax.axis("off")
 
         plt.tight_layout()

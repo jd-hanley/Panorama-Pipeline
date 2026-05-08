@@ -27,36 +27,17 @@ def load_images(path: str):
             "name": path.name,
             "color": color,
             # Images
-            "level_0": gray,
-            "level_1": None,
-            "level_2": None,
-            "level_3": None,
-            "level_4": None,
+            "gray": [gray],
             # Corner response maps by level
-            "level_0_cmap": None,
-            "level_1_cmap": None,
-            "level_2_cmap": None,
-            "level_3_cmap": None,
-            "level_4_cmap": None,
+            "cmaps": [],
             # Corner coordinates by level
-            "level_0_corners": None,
-            "level_1_corners": None,
-            "level_2_corners": None,
-            "level_3_corners": None,
-            "level_4_corners": None,
+            "corners": [],
             # Corner scores by level
-            "level_0_corner_scores": None,
-            "level_1_corner_scores": None,
-            "level_2_corner_scores": None,
-            "level_3_corner_scores": None,
-            "level_4_corner_scores": None,
+            "corner_scores": [],
             # Best corners after ANMS by level
-            "level_0_best_corners": None,
-            "level_1_best_corners": None,
-            "level_2_best_corners": None,
-            "level_3_best_corners": None,
-            "level_4_best_corners": None,
-            "keypoints": None,
+            "best_corners": [],
+            # Keypoints contains info including the location and feature descriptor
+            "keypoints": [],
             "shape": color.shape[:2],
             "sorted_corners": None
         })
