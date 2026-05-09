@@ -10,7 +10,7 @@ Input:
     images: list of image dictionaries
 Output:
     theta: keypoint orientation in radians
-*** Output added to image dictionary entries
+*** Output added to image dictionary keypoint entries
 """
 def estimate_keypoint_orientations(images):
     """ 
@@ -19,7 +19,7 @@ def estimate_keypoint_orientations(images):
         - Compute the Gaussian weighted average of the x and y gradients across all pixels in the window
         - Compute the resulting angle
     Why?
-        - Gives an estimate of the dominant orientation of the feature
+        - Gives an estimate of the dominant orientation of the feature by looking at behavior in the area
     """
     
     window_size = 11
@@ -40,19 +40,19 @@ def estimate_keypoint_orientations(images):
                 col = kp["col"]
 
                 # Window boundaries
-                r0 = row - half
-                r1 = row + half + 1
-                c0 = col - half
-                c1 = col + half + 1
+                r_start = row - half
+                r_end = row + half + 1
+                c_start = col - half
+                c_end = col + half + 1
 
                 # Skip keypoints that too close to the border
-                if r0 < 0 or c0 < 0 or r1 > gray.shape[0] or c1 > gray.shape[1]:
+                if r_start < 0 or c_start < 0 or r_end > gray.shape[0] or c_end > gray.shape[1]:
                     kp["theta"] = None
                     continue
                 
                 # Grab the image gradients in the relevant patch
-                ix_patch = ix[r0:r1, c0:c1]
-                iy_patch = iy[r0:r1, c0:c1]
+                ix_patch = ix[r_start:r_end, c_start:c_end]
+                iy_patch = iy[r_start:r_end, c_start:c_end]
 
                 # Use gaussian weighting to give nearby gradients more influence
                 weights = cv2.getGaussianKernel(window_size, sigma=2)
@@ -76,7 +76,7 @@ def compute_mops_descriptors(images):
 
     for image in images:
         for level in range(NUM_LEVELS):
-            gray = image["gray"][level].astype(np.float64)
+            gray = np.float64(image["gray"][level])
             keypoints = image["keypoints"][level]
 
             for kp in keypoints:
@@ -137,7 +137,7 @@ def compute_mops_descriptors(images):
                 descriptor_patch = cv2.resize(inner_patch, (DESCRIPTOR_SIZE, DESCRIPTOR_SIZE), interpolation=cv2.INTER_AREA)
 
                 # Flatten to 64 x 1 vector
-                descriptor = descriptor_patch.flatten().astype(np.float64)
+                descriptor = np.float64(descriptor_patch.flatten())
 
                 # Normalize by subtracting the mean and dividing by standard deviation
                 descriptor -= np.mean(descriptor)

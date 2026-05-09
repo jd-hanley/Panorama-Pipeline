@@ -4,9 +4,10 @@ import cv2
 """
 Load images from a specified folder
 Input: 
-    folder (string): path to folder containing image dataset
+    path (string): path to folder containing image dataset
 Output: 
-    images (list of dictionaries): dictionaries containing images and relevant information"""
+    images (list of dictionaries): dictionaries containing images and relevant information for the pipeline
+"""
 def load_images(path: str):
 
     # Valid file extensions: jpg, jpeg, png
@@ -26,7 +27,7 @@ def load_images(path: str):
             "path": str(path),
             "name": path.name,
             "color": color,
-            # Images
+            # List of grayscale images at all levels
             "gray": [gray],
             # Corner response maps by level
             "cmaps": [],

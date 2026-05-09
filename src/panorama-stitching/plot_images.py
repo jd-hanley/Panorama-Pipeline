@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import math
 
 """
+Believe this is legacy code
 Display an image using matplotlib
 Input:
     image (np.ndarray): Grayscale or BGR image.
@@ -19,19 +20,19 @@ def show_image(image):
     plt.show()
 
 """
-Display all images in a list using matplotlib
+Display all images in the list using matplotlib
 Input:
     images (list of image dictionaries)
 Output:
     None
 """
 def plot_images(images):
+
     # Determine the number of images to be plotted
     n = len(images)
 
-    # Personal preference: use a convention of four columns
+    # Personal preference: use a convention of three columns
     cols = 3
-
     rows = math.ceil(n / cols)
 
     fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
@@ -47,7 +48,7 @@ def plot_images(images):
         ax.set_title(image["name"], fontsize=10)
         ax.axis("off")
 
-    for ax in axes[len(images):]:
+    for ax in axes[n:]:
         ax.axis("off")
     
     plt.tight_layout()

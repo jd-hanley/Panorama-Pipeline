@@ -28,6 +28,8 @@ from feature_matching import (
     plot_all_matches
 )
 
+from ransac import estimate_all_pairwise_homographies, plot_all_inlier_matches
+
 def main():
     dataset_name = sys.argv[1]
 
@@ -48,9 +50,8 @@ def main():
     flatten_keypoints(images)
     pair_matches = match_all_image_pairs(images)
     plot_all_matches(images, pair_matches)
-    # plot_corners(images, True)
-    # anms(images, 500)
-    # plot_corners(images, False)
+    pair_models = estimate_all_pairwise_homographies(pair_matches)
+    plot_all_inlier_matches(images, pair_models)
 
 
 if __name__ == "__main__":

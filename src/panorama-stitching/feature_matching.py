@@ -25,7 +25,7 @@ Input:
     image_a: image dictionary
     image_b: image dictionary
 Output:
-    matches: list of dictionaries
+    matches: list of match dictionaries
 """
 def match_image_pair(image_a, image_b):
     """
@@ -34,7 +34,7 @@ def match_image_pair(image_a, image_b):
         - Compute the ratio of the best match to the second best match
         - If the ratio is below the threshold, add the match and all relevant information to the result
     """
-    # Start by flattening the keypoints to a single data structure
+
     matches = []
 
     for kp_a in image_a["all_keypoints"]:
@@ -57,6 +57,7 @@ def match_image_pair(image_a, image_b):
         if len(distances) < 2:
             continue
 
+        # Sort according to the ssd term
         distances.sort(key=lambda x: x[0])
 
         best_distance, best_kp = distances[0]
@@ -106,7 +107,7 @@ Input:
 Output: 
     None
 """
-def plot_matches(image_a, image_b, matches):
+def plot_matches(image_a, image_b, matches, raw=True):
 
     h_a, w_a = image_a["color"].shape[:2]
     h_b, w_b = image_b["color"].shape[:2]
@@ -124,6 +125,18 @@ def plot_matches(image_a, image_b, matches):
     plt.figure(figsize=(14,7))
     plt.imshow(canvas)
     plt.axis("off")
+
+    if raw:
+        plt.title(
+            f"Raw Matches: {image_a['name']} <--> {image_b['name']} "
+            f"({len(matches)} matches)"
+        )
+    
+    else:
+        plt.title(
+        f"RANSAC Inliers: {image_a['name']} <--> {image_b['name']} "
+        f"({len(matches)} inliers)"
+    )
 
     for match in matches:
         x_a, y_a = match["pt_a"]

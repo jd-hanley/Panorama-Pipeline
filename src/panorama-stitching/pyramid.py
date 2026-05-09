@@ -9,18 +9,14 @@ Build the Gaussian Pyramid for robust, scale/rotation invariant feature descript
 Input:
     images: list of image dictionaries
 Output:
-    level_1/2/3/4: downsampled versions of the original grayscale image (1/2, 1/4, 1/8, 1/16)
-    *** Outputs added to the image dictionaries
+    level 1/2/3/4: downsampled versions of the original grayscale image (1/2, 1/4, 1/8, 1/16)
+    *** Outputs added to the image dictionaries (in the "gray" list of the dictionary)
 """
 def build_pyramid(images):
 
-    # Iterate over all images in the list
     for image in images:
-
-        # Trying to clean this up a little bit
-        # Iterate over the number of levels in the pyramid
-        for level in range(1, NUM_LEVELS):
-            # Make a copy of the last image 
+        for _ in range(1, NUM_LEVELS):
+            # We want to downsample from the last entry in the array
             curr = image["gray"][-1].copy()
 
             # Apply Gaussian blurring
