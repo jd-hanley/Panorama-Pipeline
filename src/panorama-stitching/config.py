@@ -9,6 +9,7 @@ DESCRIPTOR_SIZE = 8
 
 # ANMS
 ANMS_FEATURES_PER_LEVEL = 250
+MAX_FILTER_WINDOW = 5
 
 # Corner Detection
 HARRIS_THRESHOLD_FACTOR = 0.005 
@@ -19,5 +20,11 @@ HARRIS_FREE_PARAMETER = 0.05        # Harris Detector free parameter
 # Feature Matching
 RATIO_THRESHOLD = 0.6               # Ratio to tune what is considered a match for features
 
+# RANSAC
+RANSAC_ITERATIONS = 1000            # Number of iterations RANSAC will run by default
+RANSAC_INLIER_COUNT = 100           # Number of inliers necessary for model to be considered good
+RANSAC_THRESHOLD = 1                # Distance threshold for a point to be considered an inlier
+RANSAC_MIN_PTS = 4                  # Minimum number of points needed for a model
+
 # MISC
-BLUR_KERNEL = 5
+BLUR_KERNEL = 5                     # Used anywhere the library Gaussian blur function is called

@@ -28,7 +28,17 @@ from feature_matching import (
     plot_all_matches
 )
 
-from ransac import estimate_all_pairwise_homographies, plot_all_inlier_matches
+from ransac import (
+    estimate_all_pairwise_homographies, 
+    plot_all_inlier_matches
+)
+
+from graph import (
+    build_image_graph,
+    choose_reference,
+    dijkstra, 
+    compute_transforms_to_reference
+)
 
 def main():
     dataset_name = sys.argv[1]
@@ -52,6 +62,12 @@ def main():
     plot_all_matches(images, pair_matches)
     pair_models = estimate_all_pairwise_homographies(pair_matches)
     plot_all_inlier_matches(images, pair_models)
+    image_graph = build_image_graph(pair_models)
+    reference_node = choose_reference(image_graph)
+    print(reference_node)
+    parents = dijkstra(image_graph, reference_node)
+    homographies = compute_transforms_to_reference(image_graph, parents)
+
 
 
 if __name__ == "__main__":
