@@ -43,4 +43,9 @@ def load_images(path: str):
             "sorted_corners": None
         })
 
+    print(f"           loaded {len(images)} images")
     return images
+
+def save_panorama(panorama, filename="final_panorama.png"):
+    cv2.imwrite(filename, panorama)
+    print(f"Saved panorama to: {filename}")

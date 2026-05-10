@@ -1,9 +1,8 @@
 import random
 import numpy as np
-from homography import compute_homography
-from feature_matching import plot_matches
+from panorama_pipeline.homography import compute_homography
 
-from config import RANSAC_ITERATIONS, RANSAC_THRESHOLD, RANSAC_INLIER_COUNT, RANSAC_MIN_PTS
+from panorama_pipeline.config import RANSAC_ITERATIONS, RANSAC_THRESHOLD, RANSAC_INLIER_COUNT, RANSAC_MIN_PTS
 
 """
 Perform Random Sample Consensus (RANSAC) to find the best homography matrix
@@ -91,8 +90,6 @@ Output:
 """
 def estimate_all_pairwise_homographies(pair_matches):
 
-    print(f"Estimating homographies between all image pairs......")
-
     pair_models = {}
 
     for pair, matches in pair_matches.items():
@@ -102,7 +99,7 @@ def estimate_all_pairwise_homographies(pair_matches):
             continue
 
         pair_models[pair] = model
-        print(f"{pair}: {model['num_inliers']} inliers")
+        print(f"           image {pair[0]} <-> image {pair[1]}: {model['num_inliers']} matches")
 
     return pair_models
 

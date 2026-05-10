@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-from config import FEATHER_WIDTH
+from panorama_pipeline.config import FEATHER_WIDTH
 
 """
 Use the transforms and images to determine the bounds of the final canvas

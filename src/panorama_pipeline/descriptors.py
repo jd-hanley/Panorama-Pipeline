@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-from config import NUM_LEVELS, DESCRIPTOR_SIZE, INNER_PATCH_SIZE, OUTER_PATCH_SIZE
+from panorama_pipeline.config import NUM_LEVELS, DESCRIPTOR_SIZE, INNER_PATCH_SIZE, OUTER_PATCH_SIZE
 
 """
 For feature descriptors to be orientation invariant, need to compute the dominant orientation using the local image gradients

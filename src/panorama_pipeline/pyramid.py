@@ -2,7 +2,7 @@ import cv2
 import math
 import matplotlib.pyplot as plt
 
-from config import NUM_LEVELS, BLUR_KERNEL
+from panorama_pipeline.config import NUM_LEVELS, BLUR_KERNEL
 
 """
 Build the Gaussian Pyramid for robust, scale/rotation invariant feature description later
@@ -27,39 +27,6 @@ def build_pyramid(images):
 
             # Add to the array
             image["gray"].append(downsampled)
-
-
-"""
-Plot the gaussian pyramid for every image
-Input:
-    images: list of image dictionaries
-Output:
-    None
-"""
-def plot_pyramid(images):
-
-    cols = 3
-    rows = math.ceil(NUM_LEVELS / cols)
-
-    for image in images:
-        fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
-        axes = axes.flatten()
-
-        fig.suptitle(f"Gaussian Pyramid for {image['name']}")
-
-        for i in range(NUM_LEVELS):
-            ax = axes[i]
-            img = image["gray"][i]
-
-            ax.imshow(img, cmap="gray")
-            ax.set_title(f"Level {i}", fontsize=10)
-            ax.axis("off")
-
-        for ax in axes[NUM_LEVELS:]:
-            ax.axis("off")
-
-        plt.tight_layout()
-        plt.show()
 
 
 

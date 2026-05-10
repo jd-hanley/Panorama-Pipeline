@@ -1,11 +1,10 @@
 import cv2
 import numpy as np
-from plot_images import show_image
 from scipy.ndimage import maximum_filter
 import math
 import matplotlib.pyplot as plt
 
-from config import HARRIS_BLOCK_SIZE, HARRIS_FREE_PARAMETER, HARRIS_K_SIZE, HARRIS_THRESHOLD_FACTOR, NUM_LEVELS, BLUR_KERNEL, MAX_FILTER_WINDOW
+from panorama_pipeline.config import HARRIS_BLOCK_SIZE, HARRIS_FREE_PARAMETER, HARRIS_K_SIZE, HARRIS_THRESHOLD_FACTOR, NUM_LEVELS, BLUR_KERNEL, MAX_FILTER_WINDOW, ANMS_FEATURES_PER_LEVEL
 
 '''
 Detect corners in an image
@@ -88,92 +87,6 @@ def harris_corner(gray, block_size, k_size, k):
 
     return cmap
 
-
-"""
-Provide a visualization of the harris corner score matrix at every level in the pyramid
-Input:
-    images: list of image dictionaries
-Output: 
-    None
-"""
-def plot_cornerness(images):
-
-    cols = 3
-    rows = math.ceil(NUM_LEVELS / cols)
-
-    for image in images:
-        fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
-        axes = axes.flatten()
-
-        fig.suptitle(f"Corner Response Matrix across Gaussian Pyramid for {image['name']}")
-
-        for i in range(NUM_LEVELS):
-            ax = axes[i]
-            cornerness_map = image["cmaps"][i]
-
-            cornerness_map[cornerness_map < 0] = 0
-
-            # For plotting purposes, clip any massive outliers
-            vmax = np.percentile(cornerness_map, 99.5)
-
-            ax.imshow(cornerness_map, cmap="inferno", vmin=0, vmax=vmax)
-            ax.set_title(f"Level {i}", fontsize=10)
-            ax.axis("off")
-
-        for ax in axes[NUM_LEVELS:]:
-            ax.axis("off")
-
-        plt.tight_layout()
-        plt.show()
-
-
-"""
-Display the detected corners for all images in a list, using matplotlib
-Input: 
-    images (list of image dictionaries): images to be plotted
-Output:
-    None
-"""
-def plot_corners(images, raw: bool):
-
-    # Determine the number of images to be plotted
-    n = len(images)
-
-    # Personal preference: use a convention of three columns
-    cols = 3
-    rows = math.ceil(n / cols)
-
-    fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows))
-    axes = axes.flatten()
-
-    if raw:
-        fig.suptitle("Detected Corners", fontsize=16)
-    else:
-        fig.suptitle("Detected Corners after ANMS", fontsize=16)
-
-    for ax, image in zip(axes, images):
-        img = image["color"].copy()
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        if raw:
-            for row, col in image["corners"][0]:
-                img_rgb[row, col] = [255,0,0]
-        
-        else:
-            for row, col in image["best_corners"][0]:
-                img_rgb[row, col] = [255,0,0]
-
-        ax.imshow(img_rgb)
-        ax.set_title(image["name"], fontsize=10)
-        ax.axis("off")
-
-    for ax in axes[len(images):]:
-        ax.axis("off")
-    
-    plt.tight_layout()
-    plt.show()
-        
-
 """
 Perform Adaptive Non-Maximal Supression
 Input:
@@ -183,7 +96,7 @@ Output:
     best_corners (list of (row, col) tuples): locations of the n best corners
     *** Output added to the image dictionaries, not returned
 """
-def anms(images, n):
+def anms(images):
     """ 
     Overview of the algorithm:
         1) Locate all regional maxima in cornerness score map
@@ -195,14 +108,11 @@ def anms(images, n):
     We get corners that are both strong and spaced out 
     """
 
-    print(f"Beginning Adaptive Non-Maximal Supression across all levels in all images......")
-
     # We need to run this over every level in every image, which could add up for larger datasets
     for image in images:
-        print(f"Processing {image['name']}......")
 
+        tracker = []
         for level in range(NUM_LEVELS):
-            print(f"Processing level {level}......")
             cmap = image["cmaps"][level]
 
             # Obtain the local maxima 
@@ -235,13 +145,14 @@ def anms(images, n):
             # Now, sort according to those indices
             sorted_coordinates = coordinates[indices]
 
-            if len(sorted_coordinates) < n:
+            if len(sorted_coordinates) < ANMS_FEATURES_PER_LEVEL:
                 image["best_corners"].append(sorted_coordinates)
-                print(f"Best corners detected for level {level}: {len(sorted_coordinates)}")
+                tracker.append(len(sorted_coordinates))
             else:
-                image["best_corners"].append(sorted_coordinates[:n])
-                print(f"Best corners detected for level {level}: {n}")
-
+                image["best_corners"].append(sorted_coordinates[:ANMS_FEATURES_PER_LEVEL])
+                tracker.append(ANMS_FEATURES_PER_LEVEL)
+        
+        print(f"           {image['name']}: {tracker}")
 
 """
 All keypoints across all levels have been detected, clean up the structure to make the rest of the pipeline more straightforward

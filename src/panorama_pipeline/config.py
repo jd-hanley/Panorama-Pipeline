@@ -21,7 +21,7 @@ HARRIS_FREE_PARAMETER = 0.05        # Harris Detector free parameter
 RATIO_THRESHOLD = 0.4               # Ratio to tune what is considered a match for features
 
 # RANSAC
-RANSAC_ITERATIONS = 5000            # Number of iterations RANSAC will run by default
+RANSAC_ITERATIONS = 1000            # Number of iterations RANSAC will run by default
 RANSAC_INLIER_COUNT = 200           # Number of inliers necessary for model to be considered good
 RANSAC_THRESHOLD = 0.4              # Distance threshold for a point to be considered an inlier
 RANSAC_MIN_PTS = 4                  # Minimum number of points needed for a model

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-from config import RATIO_THRESHOLD
+from panorama_pipeline.config import RATIO_THRESHOLD
 
 """
 Flatten all keypoints into a single list for every image
@@ -84,7 +84,6 @@ Output:
 """
 def match_all_image_pairs(images):
 
-    print("Beginning feature descriptor matching between images......")
     pair_matches = {}
 
     for i in range(len(images)):
@@ -94,70 +93,6 @@ def match_all_image_pairs(images):
             # Store the result
             pair_matches[(i, j)] = matches
 
-            print(f"Image {i} <-> Image {j}: {len(matches)} matches")
+            print(f"           image {i} <-> image {j}: {len(matches)} matches")
     
     return pair_matches
-
-"""
-Plot the matches between two images
-Input:
-    image_a: image dictionary
-    image_b: image dictionary
-    matches: list of dictionaries of match information
-Output: 
-    None
-"""
-def plot_matches(image_a, image_b, matches, raw=True):
-
-    h_a, w_a = image_a["color"].shape[:2]
-    h_b, w_b = image_b["color"].shape[:2]
-
-    canvas_h = max(h_a, h_b)
-    canvas_w = w_a + w_b
-
-    canvas = np.zeros((canvas_h, canvas_w,3), dtype=image_a["color"].dtype)
-
-    image_a_corrected = cv2.cvtColor(image_a["color"], cv2.COLOR_BGR2RGB)
-    image_b_corrected = cv2.cvtColor(image_b["color"], cv2.COLOR_BGR2RGB)
-    canvas[:h_a, :w_a] = image_a_corrected
-    canvas[:h_b, w_a:w_a + w_b] = image_b_corrected
-
-    plt.figure(figsize=(14,7))
-    plt.imshow(canvas)
-    plt.axis("off")
-
-    if raw:
-        plt.title(
-            f"Raw Matches: {image_a['name']} <--> {image_b['name']} "
-            f"({len(matches)} matches)"
-        )
-    
-    else:
-        plt.title(
-        f"RANSAC Inliers: {image_a['name']} <--> {image_b['name']} "
-        f"({len(matches)} inliers)"
-    )
-
-    for match in matches:
-        x_a, y_a = match["pt_a"]
-        x_b, y_b = match["pt_b"]
-
-        x_b_shifted = x_b + w_a
-
-        plt.plot([x_a, x_b_shifted], [y_a,y_b], linewidth=0.8)
-        plt.scatter([x_a, x_b_shifted], [y_a, y_b], s=8)
-    
-    plt.show()
-
-"""
-Plot matches for all image pairs
-Input:
-    images: list of image dictionaries
-    pair_matches: dictionary of image pairs to list of matches
-Output:
-    None
-"""
-def plot_all_matches(images, pair_matches):
-    for i in range(len(images)):
-        for j in range(i + 1, len(images)):
-            plot_matches(images[i], images[j], pair_matches[(i, j)])
