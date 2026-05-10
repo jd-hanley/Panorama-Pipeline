@@ -12,7 +12,7 @@ ANMS_FEATURES_PER_LEVEL = 500
 MAX_FILTER_WINDOW = 5
 
 # Corner Detection
-HARRIS_THRESHOLD_FACTOR = 0.005
+HARRIS_THRESHOLD_FACTOR = 0.05
 HARRIS_BLOCK_SIZE = 5               # Size of the neighborhood for corner detection
 HARRIS_K_SIZE = 3                   # Kernel size of the sobel operator used
 HARRIS_FREE_PARAMETER = 0.05        # Harris Detector free parameter
