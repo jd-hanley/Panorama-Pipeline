@@ -28,7 +28,7 @@ def build_image_graph(pair_models):
         })
 
         graph[dst].append({
-            "neighbor": dst, 
+            "neighbor": src, 
             "H": np.linalg.inv(model["H"]),
             "cost": 1.0 / model["num_inliers"]
         })
